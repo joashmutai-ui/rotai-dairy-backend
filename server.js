@@ -90,4 +90,37 @@ app.post('/api/sales', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// --- Expenses Endpoints ---
+
+// Get all expenses
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM expenses ORDER BY date DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching expenses:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add an expense
+app.post('/api/expenses', async (req, res) => {
+  const { date, category, description, amount } = req.body;
+  if (!date || !category || !amount) {
+    return res.status(400).json({ error: 'date, category, and amount are required' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO expenses (date, category, description, amount)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [date, category, description || null, amount]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('Error adding expense:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
