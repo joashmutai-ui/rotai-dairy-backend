@@ -57,4 +57,37 @@ app.post('/api/milk', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// --- Milk Sales Endpoints ---
+
+// Get all milk sales
+app.get('/api/sales', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM milk_sales ORDER BY date DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching sales:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a milk sale
+app.post('/api/sales', async (req, res) => {
+  const { date, quantity_kg, price_per_kg, buyer } = req.body;
+  if (!date || !quantity_kg || !price_per_kg) {
+    return res.status(400).json({ error: 'date, quantity_kg, and price_per_kg are required' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO milk_sales (date, quantity_kg, price_per_kg, buyer)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [date, quantity_kg, price_per_kg, buyer || null]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('Error adding sale:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
