@@ -27,3 +27,34 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+// --- Milk Production Endpoints ---
+
+// Get all milk records
+app.get('/api/milk', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM milk_production ORDER BY date DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching milk:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a milk record
+app.post('/api/milk', async (req, res) => {
+  const { cow_name, date, milk_kg } = req.body;
+  if (!cow_name || !date || milk_kg == null) {
+    return res.status(400).json({ error: 'cow_name, date, and milk_kg are required' });
+  }
+  try {
+    const { rows } = await pool.query(
+      'INSERT INTO milk_production (cow_name, date, milk_kg) VALUES ($1, $2, $3) RETURNING *',
+      [cow_name, date, milk_kg]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('Error adding milk record:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
